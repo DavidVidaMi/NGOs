@@ -116,8 +116,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 251961efe8ba2334f93a9138d8a404c0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  speed:
+    m_InternalValue: 0
   Position:
     m_InternalValue: {x: 0, y: 0, z: 0}
+  materialId:
+    m_InternalValue: 0
+  materials:
+  - {fileID: 2100000, guid: b78726b08d6bc604e8405714c15a5f18, type: 2}
+  - {fileID: 2100000, guid: d74275bfb070b3c4db99fa6850e539ea, type: 2}
+  - {fileID: 2100000, guid: 21d31672c9c55384e90e7c78adee7b78, type: 2}
+  - {fileID: 2100000, guid: 1f2b9fa0b103e0842bf97b61a1468296, type: 2}
+  - {fileID: 2100000, guid: db4428d696b763646b8883a318a809a1, type: 2}
+  - {fileID: 2100000, guid: ec032b19abdca7644a0534dc6812b823, type: 2}
+  - {fileID: 2100000, guid: d5726207a811c7a489ec849416ee5371, type: 2}
+  - {fileID: 2100000, guid: e86d9c1d6b0fb9f4084dd4a0c3fdfc43, type: 2}
+  - {fileID: 2100000, guid: 0c9695baf5c78974e90d1260a4b88ce7, type: 2}
+  - {fileID: 2100000, guid: dfe1147245190b640aee2dda74d51129, type: 2}
 --- !u!114 &7104715609194149729
 MonoBehaviour:
   m_ObjectHideFlags: 0
