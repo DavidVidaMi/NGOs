@@ -78,6 +78,14 @@ namespace HelloWorld
             {
                 MoveAD(-Vector3.right);
             }
+            if (Input.GetKey(KeyCode.W))
+            {
+                MoveAD(Vector3.up);
+            }
+            if (Input.GetKey(KeyCode.S))
+            {
+                MoveAD(-Vector3.up);
+            }
             transform.position = Position.Value;
         }
     }
