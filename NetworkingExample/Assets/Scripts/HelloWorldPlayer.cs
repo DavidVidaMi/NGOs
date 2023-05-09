@@ -36,8 +36,10 @@ namespace HelloWorld
 
         public void MoveAD(Vector3 direction)
         {
+            //Checks if is the owner hwo is trying to move.
             if (IsOwner)
             {
+                //If is the owner checks if is the server or one of the clients. If is the server changes his position, if not ask the server to change his position.
                 if (NetworkManager.Singleton.IsServer)
                 {
                     Position.Value += (direction * speed.Value * Time.deltaTime);
@@ -70,6 +72,7 @@ namespace HelloWorld
 
         void Update()
         {
+            //Detects the inputs of the keys and sets the movement direction.
             if (Input.GetKey(KeyCode.D))
             { 
                 MoveAD(Vector3.right);
