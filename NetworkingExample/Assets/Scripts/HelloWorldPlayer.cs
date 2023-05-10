@@ -12,6 +12,26 @@ namespace HelloWorld
         public SpriteRenderer spriteRenderer = new SpriteRenderer();
         public List<int> takenIds = new List<int>();
         public List<Material> materials = new List<Material>();
+        public NetworkVariable<int> conectedPlayers = new NetworkVariable<int>();
+
+
+        private void Awake()
+        {
+            if (IsOwner)
+            {
+                if (NetworkManager.Singleton.IsServer)
+                {
+                    takenMaterialId.Value = -1;
+                }
+                else
+                {
+                    StartTakenMaterialIdServerRpc();
+                }
+            }
+                
+
+        }
+
 
         private void Start()
         {
@@ -28,17 +48,31 @@ namespace HelloWorld
 
             if (IsOwner)
             {
-                //for (int i = 0; i <= 9; i++)
-                //{
-                //    materials.Add(Resources.Load("Material " + i, typeof(Material)) as Material);
-                //    Debug.Log(materials[i]);
-                //}
-
+                
+                if (NetworkManager.Singleton.IsServer)
+                {
+                    conectedPlayers.Value++;
+                }
+                else
+                {
+                    ConectPlayerServerRpc();
+                }
                 Move();
                 SetMaterial();
             }
         }
 
+        public override void OnNetworkDespawn()
+        {
+            if (NetworkManager.Singleton.IsServer)
+            {
+                conectedPlayers.Value++;
+            }
+            else
+            {
+                DisconectPlayerServerRpc();
+            }
+        }
         public void Move()
         {
             if (NetworkManager.Singleton.IsServer)
@@ -89,9 +123,9 @@ namespace HelloWorld
             return new Vector3(Random.Range(-3f, 3f), 1f, Random.Range(-3f, 3f));
         }
 
-        private void SetMaterial()
+        public void SetMaterial()
         {
-            if (takenIds.Count < 10)
+            if (conectedPlayers.Value< 10)
             {
                 if (IsOwner)
                 {
@@ -102,7 +136,6 @@ namespace HelloWorld
                             takenMaterialId.Value = Random.Range(0, materials.Count);
 
                         } while (takenIds.Contains(takenMaterialId.Value));
-                        UpdateTakenIdsList();
                     }
                     else
                     {
@@ -116,17 +149,38 @@ namespace HelloWorld
         [ServerRpc]
         void SubmitSetMaterialRequestServerRpc(ServerRpcParams rpcParams = default)
         {
+            if (takenMaterialId.Value != -1)
+            {
+                takenIds.Remove(takenMaterialId.Value);
+            }
             do
             {
                 takenMaterialId.Value = Random.Range(0, materials.Count);
 
             } while (takenIds.Contains(takenMaterialId.Value));
-            Debug.Log("Hola son Client");
-            UpdateTakenIdsList();
+        }
+
+        [ServerRpc]
+        void StartTakenMaterialIdServerRpc(ServerRpcParams rpcParams = default)
+        {
+            takenMaterialId.Value = -1;
+        }
+
+        [ServerRpc]
+        void DisconectPlayerServerRpc(ServerRpcParams rpcParams = default)
+        {
+            conectedPlayers.Value--;
+        }
+
+        [ServerRpc]
+        void ConectPlayerServerRpc(ServerRpcParams rpcParams = default)
+        {
+            conectedPlayers.Value++;
         }
 
         public void UpdateTakenIdsList()
         {
+            takenIds = new List<int>();
             foreach (ulong uid in NetworkManager.Singleton.ConnectedClientsIds)
             {
                 takenIds.Add(NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(uid).GetComponent<HelloWorldPlayer>().takenMaterialId.Value);
@@ -154,6 +208,8 @@ namespace HelloWorld
             }
             transform.position = Position.Value;
             spriteRenderer.material = materials[takenMaterialId.Value];
+            UpdateTakenIdsList();
+
         }
     }
 }
