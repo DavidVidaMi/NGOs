@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -7,19 +8,71 @@ namespace HelloWorld
     {
         public NetworkVariable<float> speed = new NetworkVariable<float>();
         public NetworkVariable<Vector3> Position = new NetworkVariable<Vector3>();
+        public NetworkVariable<int> takenMaterialId = new NetworkVariable<int>();
+        public SpriteRenderer spriteRenderer = new SpriteRenderer();
+        public List<int> takenIds = new List<int>();
+        public List<Material> materials = new List<Material>();
+        public NetworkVariable<int> conectedPlayers = new NetworkVariable<int>();
 
-        private void Start()
-        {
-            speed.Value = 2F;
-        }
-        public override void OnNetworkSpawn()
+
+        private void Awake()
         {
             if (IsOwner)
             {
+                if (NetworkManager.Singleton.IsServer)
+                {
+                    takenMaterialId.Value = -1;
+                }
+                else
+                {
+                    StartTakenMaterialIdServerRpc();
+                }
+            }
+                
+
+        }
+
+
+        private void Start()
+        {
+            if (NetworkManager.Singleton.IsServer)
+            {
+                speed.Value = 2F;
+            }
+            
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
+
+            if (IsOwner)
+            {
+                
+                if (NetworkManager.Singleton.IsServer)
+                {
+                    conectedPlayers.Value++;
+                }
+                else
+                {
+                    ConectPlayerServerRpc();
+                }
                 Move();
+                SetMaterial();
             }
         }
 
+        public override void OnNetworkDespawn()
+        {
+            if (NetworkManager.Singleton.IsServer)
+            {
+                conectedPlayers.Value++;
+            }
+            else
+            {
+                DisconectPlayerServerRpc();
+            }
+        }
         public void Move()
         {
             if (NetworkManager.Singleton.IsServer)
@@ -32,6 +85,12 @@ namespace HelloWorld
             {
                 SubmitPositionRequestServerRpc();
             }
+        }
+
+        [ServerRpc]
+        void SubmitPositionRequestServerRpc(ServerRpcParams rpcParams = default)
+        {
+            Position.Value = GetRandomPositionOnPlane();
         }
 
         public void MoveAD(Vector3 direction)
@@ -49,13 +108,7 @@ namespace HelloWorld
                     SubmitADPositionRequestServerRpc(direction);
                 }
             }
-            
-        }
 
-        [ServerRpc]
-        void SubmitPositionRequestServerRpc(ServerRpcParams rpcParams = default)
-        {
-            Position.Value = GetRandomPositionOnPlane();
         }
 
         [ServerRpc]
@@ -68,6 +121,70 @@ namespace HelloWorld
         static Vector3 GetRandomPositionOnPlane()
         {
             return new Vector3(Random.Range(-3f, 3f), 1f, Random.Range(-3f, 3f));
+        }
+
+        public void SetMaterial()
+        {
+            if (conectedPlayers.Value< 10)
+            {
+                if (IsOwner)
+                {
+                    if (NetworkManager.Singleton.IsServer)
+                    {
+                        do
+                        {
+                            takenMaterialId.Value = Random.Range(0, materials.Count);
+
+                        } while (takenIds.Contains(takenMaterialId.Value));
+                    }
+                    else
+                    {
+                        SubmitSetMaterialRequestServerRpc();
+                    }
+                }
+            }
+
+        }
+
+        [ServerRpc]
+        void SubmitSetMaterialRequestServerRpc(ServerRpcParams rpcParams = default)
+        {
+            if (takenMaterialId.Value != -1)
+            {
+                takenIds.Remove(takenMaterialId.Value);
+            }
+            do
+            {
+                takenMaterialId.Value = Random.Range(0, materials.Count);
+
+            } while (takenIds.Contains(takenMaterialId.Value));
+        }
+
+        [ServerRpc]
+        void StartTakenMaterialIdServerRpc(ServerRpcParams rpcParams = default)
+        {
+            takenMaterialId.Value = -1;
+        }
+
+        [ServerRpc]
+        void DisconectPlayerServerRpc(ServerRpcParams rpcParams = default)
+        {
+            conectedPlayers.Value--;
+        }
+
+        [ServerRpc]
+        void ConectPlayerServerRpc(ServerRpcParams rpcParams = default)
+        {
+            conectedPlayers.Value++;
+        }
+
+        public void UpdateTakenIdsList()
+        {
+            takenIds = new List<int>();
+            foreach (ulong uid in NetworkManager.Singleton.ConnectedClientsIds)
+            {
+                takenIds.Add(NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(uid).GetComponent<HelloWorldPlayer>().takenMaterialId.Value);
+            }
         }
 
         void Update()
@@ -90,6 +207,9 @@ namespace HelloWorld
                 MoveAD(-Vector3.up);
             }
             transform.position = Position.Value;
+            spriteRenderer.material = materials[takenMaterialId.Value];
+            UpdateTakenIdsList();
+
         }
     }
 }

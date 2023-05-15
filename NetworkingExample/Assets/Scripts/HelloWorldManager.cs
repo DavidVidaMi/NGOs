@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -17,6 +18,8 @@ namespace HelloWorld
                 StatusLabels();
 
                 SubmitNewPosition();
+
+                SubmitNewColor();
             }
 
             GUILayout.EndArea();
@@ -56,5 +59,25 @@ namespace HelloWorld
                 }
             }
         }
+
+        static void SubmitNewColor()
+        {
+            if (GUILayout.Button(NetworkManager.Singleton.IsServer ? "Change color" : "Request color change"))
+            {
+                if (NetworkManager.Singleton.IsServer && !NetworkManager.Singleton.IsClient)
+                {
+                    foreach (ulong uid in NetworkManager.Singleton.ConnectedClientsIds)
+                        NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(uid).GetComponent<HelloWorldPlayer>().SetMaterial();
+                }
+                else
+                {
+                    var playerObject = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
+                    var player = playerObject.GetComponent<HelloWorldPlayer>();
+                    player.SetMaterial();
+                }
+            }
+        }
+
+
     }
 }
