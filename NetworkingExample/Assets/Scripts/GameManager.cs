@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -6,7 +7,7 @@ namespace HelloWorld
     public class GameManager : NetworkBehaviour
     {
         public static GameManager instance;
-        public NetworkList<int> takenIds;
+        public List<int> takenIds;
 
         void OnGUI()
         {
@@ -29,7 +30,7 @@ namespace HelloWorld
 
         private void Awake()
         {
-            takenIds = new NetworkList<int>();
+            takenIds = new List<int>();
             instance = this;
         }
 
@@ -70,7 +71,7 @@ namespace HelloWorld
 
         public void UpdateTakenIdsList()
         {
-            takenIds = new NetworkList<int>();
+            takenIds = new List<int>();
             foreach (ulong uid in NetworkManager.Singleton.ConnectedClientsIds)
             {
                 takenIds.Add(NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(uid).GetComponent<Player>().takenMaterialId.Value);

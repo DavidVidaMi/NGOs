@@ -19,7 +19,6 @@ namespace HelloWorld
             if (NetworkManager.Singleton.IsServer)
             {
                 speed.Value = 2F;
-                Debug.Log(takenMaterialId.Value);
             }
         }
 
@@ -30,16 +29,20 @@ namespace HelloWorld
             if (IsOwner)
             {
                 StartTakenMaterialIdServerRpc();
-                Debug.Log(takenMaterialId.Value);
                 ConectPlayerServerRpc();
                 Move();
+                takenMaterialId.OnValueChanged += OnTakenIdValueChanged;
                 SetMaterial();
             }
+
         }
 
         public override void OnNetworkDespawn()
         {
-            DisconectPlayerServerRpc();
+            if (IsOwner)
+            {
+                DisconectPlayerServerRpc();
+            }
         }
         public void Move()
         {
@@ -73,22 +76,22 @@ namespace HelloWorld
         [ServerRpc]
         void SubmitSetMaterialRequestServerRpc(ServerRpcParams rpcParams = default)
         {
-            if (takenMaterialId.Value != -1)
-            {
-                GameManager.instance.takenIds.Remove(takenMaterialId.Value);
-            }
+            //if (takenMaterialId.Value != -1)
+            //{
+            //    GameManager.instance.takenIds.Remove(takenMaterialId.Value);
+            //}
             do
             {
                 takenMaterialId.Value = Random.Range(0, materials.Count);
 
            } while (GameManager.instance.takenIds.Contains(takenMaterialId.Value));
-            GameManager.instance.UpdateTakenIdsList();
+            
         }
 
         [ServerRpc]
         void StartTakenMaterialIdServerRpc(ServerRpcParams rpcParams = default)
         {
-            takenMaterialId.Value = -1;
+            takenMaterialId.Value = 0;
         }
 
         [ServerRpc]
@@ -103,7 +106,11 @@ namespace HelloWorld
             conectedPlayers.Value++;
         }
 
-        
+        private void OnTakenIdValueChanged(int previous, int current)
+        {
+            GameManager.instance.UpdateTakenIdsList();
+            spriteRenderer.material = materials[takenMaterialId.Value];
+        }
 
         void Update()
         {
@@ -127,7 +134,6 @@ namespace HelloWorld
                     MoveADRequestServerRpc(-Vector3.up);
                 }
             }
-            spriteRenderer.material = materials[takenMaterialId.Value];
         }
     }
 }
