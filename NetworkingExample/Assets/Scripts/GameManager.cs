@@ -21,8 +21,6 @@ namespace HelloWorld
                 StatusLabels();
 
                 SubmitNewPosition();
-
-                SubmitNewColor();
             }
 
             GUILayout.EndArea();
@@ -56,25 +54,6 @@ namespace HelloWorld
                 var playerObject = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
                 var player = playerObject.GetComponent<Player>();
                 player.Move();
-            }
-        }
-
-        static void SubmitNewColor()
-        {
-            if (GUILayout.Button(NetworkManager.Singleton.IsServer ? "Change color" : "Request color change"))
-            {
-                var playerObject = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
-                var player = playerObject.GetComponent<Player>();
-                player.SetMaterial();
-            }
-        }
-
-        public void UpdateTakenIdsList()
-        {
-            takenIds = new List<int>();
-            foreach (ulong uid in NetworkManager.Singleton.ConnectedClientsIds)
-            {
-                takenIds.Add(NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(uid).GetComponent<Player>().takenMaterialId.Value);
             }
         }
     }
