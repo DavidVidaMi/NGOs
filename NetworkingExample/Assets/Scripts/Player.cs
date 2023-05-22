@@ -8,6 +8,10 @@ namespace HelloWorld
     {
         public NetworkVariable<float> speed = new NetworkVariable<float>();
         public NetworkVariable<Vector3> Position = new NetworkVariable<Vector3>();
+        public NetworkVariable<bool> hasAdvantage = new NetworkVariable<bool>();
+        public NetworkVariable<bool> hasDisvantage = new NetworkVariable<bool>();
+
+        private SpriteRenderer spriteRenderer;
 
 
         private void Start()
@@ -24,6 +28,7 @@ namespace HelloWorld
             if (IsOwner)
             {
                 Move();
+                
             }
 
         }
@@ -51,53 +56,57 @@ namespace HelloWorld
             transform.position = new Vector3(transform.position.x, 0f + Mathf.PingPong(Time.time*25f, 1), transform.position.z);
         }
 
-        [ServerRpc]
-        void VantageServerRpc(ServerRpcParams rpcParams = default)
-        {
-            if (IsOwner)
-            {
-                StartCoroutine(VantageCoroutine());
-            }
-        }
-
         [ClientRpc]
         public void AdvantageClientRpc(int framekey, ClientRpcParams clientRpcParams = default)
         {
-            VantageServerRpc();
-            Debug.Log("Chamado o cliente ");
+            if(IsOwner)
+                VantageServerRpc();
+        }
+
+        [ServerRpc]
+        void VantageServerRpc(ServerRpcParams rpcParams = default)
+        {
+            speed.Value *= 2;
+            hasAdvantage.Value = true;
+            StartCoroutine(VantageCoroutine());
+            
+        }
+        
+        private IEnumerator VantageCoroutine()
+        {
+
+            while (hasAdvantage.Value)
+            {
+                Debug.Log("Esto repítese?");
+                yield return new WaitForSeconds(5f);
+                speed.Value /= 2;
+                hasAdvantage.Value = false;
+            }
+        }
+        [ClientRpc]
+        public void DisvantageClientRpc(int framekey, ClientRpcParams clientRpcParams = default)
+        {
+            if (IsOwner)
+                DisvantageServerRpc();
         }
 
         [ServerRpc]
         void DisvantageServerRpc(ServerRpcParams rpcParams = default)
         {
-            if (IsOwner)
-            {
-                StartCoroutine(DisvantageCoroutine());
-            }
-        }
-
-        [ClientRpc]
-        public void DisvantageClientRpc(int framekey, ClientRpcParams clientRpcParams = default)
-        {
-            DisvantageServerRpc();
-            Debug.Log("Chamado o cliente ");
-        }
-
-        private IEnumerator VantageCoroutine()
-        {
-            while (true)
-            {
-                speed.Value *= 2;
-                yield return new WaitForSeconds(5f);
-            }
+            speed.Value /= 2;
+            hasDisvantage.Value = true;
+            StartCoroutine(DisvantageCoroutine());
+           
         }
 
         private IEnumerator DisvantageCoroutine()
         {
-            while (true)
+            
+            while (hasDisvantage.Value)
             {
-                speed.Value /= 2;
                 yield return new WaitForSeconds(5f);
+                speed.Value *= 2;
+                hasDisvantage.Value = false;
             }
         }
 
@@ -126,6 +135,23 @@ namespace HelloWorld
                 {
                     ShackeRequestServerRpc();
                 }
+            }
+            spriteRenderer = GetComponent<SpriteRenderer>();
+            if (hasAdvantage.Value && !hasDisvantage.Value)
+            {
+                spriteRenderer.color = Color.red;
+            }
+            else if (hasDisvantage.Value && !hasAdvantage.Value)
+            {
+                spriteRenderer.color = Color.blue;
+            }
+            else if (!hasDisvantage.Value && !hasAdvantage.Value)
+            {
+                spriteRenderer.color = Color.white;
+            }
+            else
+            {
+                spriteRenderer.color = Color.green;
             }
         }
     }
