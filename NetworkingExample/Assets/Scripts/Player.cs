@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -49,6 +49,56 @@ namespace HelloWorld
         public void ShackeRequestServerRpc()
         {
             transform.position = new Vector3(transform.position.x, 0f + Mathf.PingPong(Time.time*25f, 1), transform.position.z);
+        }
+
+        [ServerRpc]
+        void VantageServerRpc(ServerRpcParams rpcParams = default)
+        {
+            if (IsOwner)
+            {
+                StartCoroutine(VantageCoroutine());
+            }
+        }
+
+        [ClientRpc]
+        public void AdvantageClientRpc(int framekey, ClientRpcParams clientRpcParams = default)
+        {
+            VantageServerRpc();
+            Debug.Log("Chamado o cliente ");
+        }
+
+        [ServerRpc]
+        void DisvantageServerRpc(ServerRpcParams rpcParams = default)
+        {
+            if (IsOwner)
+            {
+                StartCoroutine(DisvantageCoroutine());
+            }
+        }
+
+        [ClientRpc]
+        public void DisvantageClientRpc(int framekey, ClientRpcParams clientRpcParams = default)
+        {
+            DisvantageServerRpc();
+            Debug.Log("Chamado o cliente ");
+        }
+
+        private IEnumerator VantageCoroutine()
+        {
+            while (true)
+            {
+                speed.Value *= 2;
+                yield return new WaitForSeconds(5f);
+            }
+        }
+
+        private IEnumerator DisvantageCoroutine()
+        {
+            while (true)
+            {
+                speed.Value /= 2;
+                yield return new WaitForSeconds(5f);
+            }
         }
 
         void Update()
